@@ -1,6 +1,6 @@
 ﻿using Day5a;
 
-string fileName = @"C:\Users\WebberS\source\repos\Advent of Code\Day5a\Day5a\day5-data.txt";
+string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day5a\Day5a\day5-data.txt";
 
 string[]? lines = File.ReadAllLines(fileName);
 var ventLines = new List<VentLine>();

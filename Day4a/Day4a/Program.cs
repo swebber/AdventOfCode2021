@@ -1,6 +1,6 @@
 ﻿using Day4a;
 
-string fileName = @"C:\Users\WebberS\source\repos\Advent of Code\Day4a\Day4a\day4-data.txt";
+string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day4a\Day4a\day4-data.txt";
 
 var bingoData = File.ReadAllLines(fileName);
 var moves = bingoData[0].Split(',');

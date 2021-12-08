@@ -1,4 +1,4 @@
-﻿string fileName = @"C:\Users\WebberS\source\repos\Advent of Code\Day7a\Day7a\day7-data.txt";
+﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day7a\Day7a\day7-data.txt";
 
 var horizontalPositions = File.ReadLines(fileName).First().Split(',').Select(int.Parse).ToArray();
 

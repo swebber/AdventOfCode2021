@@ -1,7 +1,7 @@
 ﻿using System.Formats.Asn1;
 using System.Runtime.CompilerServices;
 
-string fileName = @"C:\Users\WebberS\source\repos\Advent of Code\Day03\Day03\diagnostic-report.txt";
+string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day03\Day03\diagnostic-report.txt";
 
 string[]? o2Results = File.ReadAllLines(fileName);
 int length = o2Results.Length;

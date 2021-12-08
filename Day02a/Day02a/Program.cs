@@ -1,4 +1,4 @@
-﻿var courseData = File.ReadAllLines(@"C:\Users\WebberS\source\repos\Advent of Code\Day02a\Day02a\pilot-course.txt");
+﻿var courseData = File.ReadAllLines(@"C:\Users\WebberS\source\repos\AdventOfCode2021\Day02a\Day02a\pilot-course.txt");
 int horizontalPosition = 0;
 int depth = 0;
 int aim = 0;

@@ -1,5 +1,5 @@
 ﻿int days = 80;
-string fileName = @"C:\Users\WebberS\source\repos\Advent of Code\Day6a\Day6a\day6-data.txt";
+string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day6a\Day6a\day6-data.txt";
 
 var listOfAges = File.ReadAllLines(fileName);
 var oldFish = listOfAges[0].Split(',').Select(int.Parse).ToList();
