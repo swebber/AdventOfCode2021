@@ -2,14 +2,15 @@
 
 var openChars = new[] { '(', '[', '{', '<' };
 var closeChars = new[] { ')', ']', '}', '>' };
-var points = new[] { 3, 57, 1197, 25137 };
+var points = new[] { 1, 2, 3, 4 };
+var scores = new List<ulong>();
 
-int totalScore = 0;
-
-foreach (var item in File.ReadLines(fileName))
+foreach (var line in File.ReadLines(fileName))
 {
     var stack = new Stack<char>();
-    foreach (var ch in item)
+    bool incompleteLine = true;
+
+    foreach (var ch in line)
     {
         if (openChars.Contains(ch)) stack.Push(ch);
 
@@ -19,16 +20,32 @@ foreach (var item in File.ReadLines(fileName))
             char openChar = openChars[x];
             if (stack.Peek() != openChar)
             {
-                int score = points[x];
-                totalScore += score;
-                x = Array.IndexOf(openChars, stack.Peek());
-                Console.WriteLine($"{item} - Expected {closeChars[x]}, but found {ch} instead. Points: {score}");
+                incompleteLine = false;
                 break;
             }
             stack.Pop();
         }
     }
+
+    if (incompleteLine)
+    {
+        string remaining = "";
+        ulong score = 0;
+        while (stack.Count > 0)
+        {
+            char ch = stack.Pop();
+            int x = Array.IndexOf(openChars, ch);
+            score = (score * 5) + (ulong)points[x];
+            remaining += closeChars[x];
+        }
+
+        Console.WriteLine($"{line} - Complete by adding {remaining}. Score {score}");
+        scores.Add(score);
+    }
 }
 
+scores = scores.OrderBy(s => s).ToList();
+int y = (scores.Count / 2);
+
 Console.WriteLine();
-Console.WriteLine($"Total score: {totalScore}");
+Console.WriteLine($"The middle score is: {scores[y]}");
