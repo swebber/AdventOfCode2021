@@ -15,17 +15,40 @@ int totalFlashes = 0;
 //DumpBoard();
 //Console.ReadKey();
 
-for (int i = 0; i < 100; i++)
+int step = 0;
+bool done = false;
+while (!done)
 {
+    ++step;
+
     IncreaseEnergyLevel();
     CheckOctopuses();
+    
+    if (PowerLevelZero())
+    {
+        done = true;
+        Console.WriteLine($"What is the first step during which all octopuses flash? {step}");
+        break;
+    }
 
     //Console.WriteLine($"After step: {i + 1}");
     //DumpBoard();
     //Console.ReadLine();
 }
 
-Console.WriteLine($"There have been a total of {totalFlashes} flashes.");
+//Console.WriteLine($"There have been a total of {totalFlashes} flashes.");
+
+bool PowerLevelZero()
+{
+    foreach (var row in octopuses)
+    {
+        foreach (var powerLevel in row)
+        {
+            if (powerLevel != 0) return false;
+        }
+    }
+    return true;
+}
 
 void CheckOctopuses()
 {
