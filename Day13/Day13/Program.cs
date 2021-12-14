@@ -9,12 +9,9 @@ LoadGridAndFolds();
 foreach (var fold in folds)
 {
     Fold(fold);
-    break;
 }
 
-//DumpGrid();
-
-Console.WriteLine($"only {CountDots()} dots are visible");
+DumpGrid();
 
 int CountDots()
 {
