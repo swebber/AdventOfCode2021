@@ -1,68 +1,110 @@
 ﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day14\Day14\day14-data.txt";
 
-bool template = true;
 string polymerTemplate = "";
-var pairInsertion = new Dictionary<string, string>();
+Dictionary<string, string> instruction = new();
+Dictionary<string, long> pairCount = new();
+Dictionary<string, long> totals = new();
 
 LoadData();
+InitializeCounts();
 
-for (int i = 1; i <= 10; i++)
+for (int i = 1; i <= 40; i++)
 {
-    polymerTemplate = ProcessInsertion();
-    Console.WriteLine($"After step {i}: {polymerTemplate.Length}");
+    ProcessInstructions();
 }
 
-int maxCount = int.MinValue;
-int minCount = int.MaxValue;
+long maxCount = long.MinValue;
+long minCount = long.MaxValue;
 
-char maxChar = ' ';
-char minChar = ' ';
+string maxChar = "";
+string minChar = "";
 
 PerformCount();
+DumpCounts(totals);
+
+//PerformCount();
 
 Console.WriteLine($"({minChar}, {minCount}), ({maxChar}, {maxCount}) produces {maxCount - minCount}");
 
 void PerformCount()
 {
-    var distinctCharacters = polymerTemplate.Distinct().ToArray();
-    foreach (var c in distinctCharacters)
+    foreach (var key in pairCount.Keys)
     {
-        int count = polymerTemplate.Count(it => it == c);
-        if (count > maxCount)
+        string ch = key[0].ToString();
+        if (!totals.ContainsKey(ch)) totals.Add(ch, 0L);
+        totals[ch] += pairCount[key];
+    }
+
+    var finalKey = polymerTemplate[^1].ToString();
+    if (!totals.ContainsKey(finalKey)) totals.Add(finalKey, 0L);
+    totals[finalKey] += 1L;
+
+    foreach (var key in totals.Keys)
+    {
+        if (totals[key] > maxCount)
         {
-            maxCount = count;
-            maxChar = c;
+            maxCount = totals[key];
+            maxChar = key;
         }
 
-        if (count < minCount)
+        if (totals[key] < minCount)
         {
-            minCount = count;
-            minChar = c;
+            minCount = totals[key];
+            minChar = key;
         }
     }
 }
 
-string ProcessInsertion()
+void DumpCounts(Dictionary<string, long> pairs)
 {
-    string input = polymerTemplate;
-    string output = "";
-
-    for (int i = 1; i < input.Length; i++)
+    foreach (var key in pairs.Keys)
     {
-        output += input[i - 1];
+        Console.WriteLine($"{key}: {pairs[key]}");
+    }
+}
 
-        string key = input.Substring(i - 1, 2);
-        if (pairInsertion.ContainsKey(key))
+void ProcessInstructions()
+{
+    Dictionary<string, long> passCount = new();
+    foreach (var key in instruction.Keys)
+    {
+        if (pairCount[key] == 0) continue;
+
+        long count = pairCount[key];
+        if (!passCount.ContainsKey(key)) passCount.Add(key, 0L);
+        passCount[key] += count * -1;
+
+        string[] instructionKey = new[] { $"{key[0]}{instruction[key]}", $"{instruction[key]}{key[1]}" };
+        foreach (var k in instructionKey)
         {
-            output += pairInsertion[key];
+            if (!passCount.ContainsKey(k)) passCount.Add(k, 0L);
+            passCount[k] += count;
         }
     }
 
-    return output += input.Last();
+    foreach (var key in passCount.Keys)
+    {
+        pairCount[key] += passCount[key];
+    }
+}
+
+void InitializeCounts()
+{
+    foreach (var key in instruction.Keys)
+    {
+        pairCount.Add(key, 0L);
+    }
+
+    for (int i = 1; i < polymerTemplate.Length; i++)
+    {
+        string key = $"{polymerTemplate[i - 1]}{polymerTemplate[i]}";
+        ++pairCount[key];
+    }
 }
 
 void LoadData()
 {
+    bool template = true;
     foreach (var line in File.ReadLines(fileName))
     {
         if (template)
@@ -74,6 +116,6 @@ void LoadData()
 
         if (line == "") continue;
 
-        pairInsertion.Add(line.Substring(0, 2), line.Substring(6));
+        instruction.Add(line.Substring(0, 2), line.Substring(6));
     }
 }
