@@ -10,36 +10,32 @@ string binaryString = string.Join(string.Empty,
 //Console.WriteLine(hexString);
 //Console.WriteLine(binaryString);
 
-long versionNumberTotal = 0L;
+long results = WalkPacket();
+Console.WriteLine($"Results: {results}");
 
-WalkPacket();
-
-Console.WriteLine($"Version total: {versionNumberTotal}");
-
-void WalkPacket()
+long WalkPacket()
 {
     // version
     int version = ReadBinary(3, "Version");
-    versionNumberTotal += version;
 
     // packet type
     int packetType = ReadBinary(3, "Packet type");
 
     if (packetType == 4)
     {
-        ulong literal = ReadLiteral();
-        return;
+        return ReadLiteral();
     }
 
+    List<long> packetValues = new();
     int lengthTypeId = ReadLengthType();
     if (lengthTypeId == 0)
     {
         int length = LengthOfPackets();
-
+        
         int end = index + length;
         while (index < end)
         {
-            WalkPacket();
+            packetValues.Add(WalkPacket());
         }
     }
     else
@@ -47,21 +43,21 @@ void WalkPacket()
         int packetCount = ReadByCount();
         for (int i = 0; i < packetCount; i++)
         {
-            WalkPacket();
+            packetValues.Add(WalkPacket());
         }
     }
-}
 
-bool EndOfTransmission()
-{
-    if (index == binaryString.Length) return true;
-
-    for (int x = index; x < binaryString.Length; x++)
+    long result = 1;
+    return packetType switch
     {
-        if (binaryString[x] == '1') return false;
-    }
-
-    return true;
+        0 => packetValues.Sum(),
+        1 => packetValues.Aggregate(result, (current, value) => current * value),
+        2 => packetValues.Min(),
+        3 => packetValues.Max(),
+        5 => packetValues[0] > packetValues[1] ? 1L : 0L,
+        6 => packetValues[0] < packetValues[1] ? 1L : 0L,
+        _ => packetValues[0] == packetValues[1] ? 1L : 0L
+    };
 }
 
 int ReadByCount()
@@ -84,7 +80,7 @@ int ReadLengthType()
     return value;
 }
 
-ulong ReadLiteral()
+long ReadLiteral()
 {
     bool done = false;
     StringBuilder literal = new();
@@ -97,7 +93,7 @@ ulong ReadLiteral()
         index += 5;
     }
 
-    ulong literalValue = Convert.ToUInt64(literal.ToString(), 2);
+    long literalValue = Convert.ToInt64(literal.ToString(), 2);
     return literalValue;
 }
 
