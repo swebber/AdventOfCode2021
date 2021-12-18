@@ -7,17 +7,21 @@ string input = File.ReadAllText(fileName);
 var targetArea = ParseInput();
 
 int maxHeight = int.MinValue;
-for (int x = 0; x < 200; x++)
+int velocityCount = 0;
+for (int x = -500; x < 500; x++)
 {
-    for (int y = 0; y < 200; y++)
+    for (int y = -500; y < 500; y++)
     {
         var onTarget = MyShot(new Point(0, 0), x, y);
         if (onTarget)
         {
-            Console.WriteLine($"({x}, {y}), ... Max Y: {maxHeight}");
+            //Console.WriteLine($"({x}, {y}), ... Max Y: {maxHeight}");
+            ++velocityCount;
         }
     }
 }
+
+Console.WriteLine(velocityCount);
 
 bool MyShot(Point pt, int xVelocity, int yVelocity)
 {
