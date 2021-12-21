@@ -1,4 +1,4 @@
-﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day18a\Day18a\test1-data.txt";
+﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day18a\Day18a\day18-data.txt";
 
 LinkedList<Item> number = new();
 foreach (var line in File.ReadLines(fileName))
@@ -15,7 +15,36 @@ foreach (var line in File.ReadLines(fileName))
     Reduce();
 }
 
+//DumpNumber(number);
+
+Magnitude();
 DumpNumber(number);
+
+void Magnitude()
+{
+    while (ThereAreStillPairs())
+    {
+        for (var node = number.First; node != null; node = node.Next)
+        {
+            if (NodeIsStartOfPair(node))
+            {
+                var left = node;
+                var right = node.Next.Next;
+
+                // in this case "node" points at the first number in the pair
+                int total = (left.Value.Number * 3) + (right.Value.Number * 2);
+
+                number.Remove(node.Previous); // remove the leading [
+                node.Value.Number = total; // update the magnitude
+                number.Remove(node.Next); // remove the , separator
+                number.Remove(node.Next); // remove the second number in the pair
+                number.Remove(node.Next); // remove the training ]
+
+                break;
+            }
+        }
+    }
+}
 
 void Reduce()
 {
@@ -150,6 +179,16 @@ bool NodeIsStartOfPair(LinkedListNode<Item> node)
     if (n == null || n.Value.Type != ItemType.Number) return false;
 
     return true;
+}
+
+bool ThereAreStillPairs()
+{
+    for (var node = number.First; node != null; node = node.Next)
+    {
+        if (node.Value.Type == ItemType.Separator) return true;
+    }
+
+    return false;
 }
 
 void Add(LinkedList<Item> items)
