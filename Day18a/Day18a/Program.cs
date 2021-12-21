@@ -1,24 +1,57 @@
 ﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day18a\Day18a\day18-data.txt";
 
 LinkedList<Item> number = new();
-foreach (var line in File.ReadLines(fileName))
+Part2();
+
+void Part2()
 {
-    if (number.Count == 0)
+    int max = int.MinValue;
+
+    var lines = File.ReadAllLines(fileName);
+    foreach (var line1 in lines)
     {
-        number = Parse(line);
-    }
-    else
-    {
-        Add(Parse(line));
+        foreach (var line2 in lines)
+        {
+            number.Clear();
+            number = Parse(line1);
+            Add(Parse(line2));
+            Reduce();
+            Magnitude();
+            if (number.First.Value.Number > max) max = number.First.Value.Number;
+
+            number.Clear();
+            number = Parse(line2);
+            Add(Parse(line1));
+            Reduce();
+            Magnitude();
+            if (number.First.Value.Number > max) max = number.First.Value.Number;
+        }
     }
 
-    Reduce();
+    Console.WriteLine(max);
 }
 
-//DumpNumber(number);
+void Part1()
+{
+    foreach (var line in File.ReadLines(fileName))
+    {
+        if (number.Count == 0)
+        {
+            number = Parse(line);
+        }
+        else
+        {
+            Add(Parse(line));
+        }
 
-Magnitude();
-DumpNumber(number);
+        Reduce();
+    }
+
+    //DumpNumber(number);
+
+    Magnitude();
+    DumpNumber(number);
+}
 
 void Magnitude()
 {
