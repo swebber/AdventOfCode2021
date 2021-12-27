@@ -1,109 +1,189 @@
-﻿string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day19\Day19\test-data.txt";
+﻿using System.ComponentModel.DataAnnotations;
 
-List<Scanner> scannerList = new();
-LoadBeacons();
-CalculateDistancePairs();
+string fileName = @"C:\Users\WebberS\source\repos\AdventOfCode2021\Day19\Day19\day19-data.txt";
+string input = File.ReadAllText(fileName);
 
-void DistanceOverlap(int scannerId1, int scannerId2)
+int numberOfBeacons = PartOne(input);
+Console.WriteLine($"Part 1, Number of beacons: {numberOfBeacons}");
+
+int largestDistance = PartTwo(input);
+Console.WriteLine($"The largest Manhattan distaince is: {largestDistance}");
+
+int PartOne(string input) =>
+    LocateScanners(input)
+        .SelectMany(scanner => scanner.GetBeaconsInWorld())
+        .Distinct()
+        .Count();
+
+int PartTwo(string input)
 {
-    var s1 = scannerList.First(s => s.Id == scannerId1);
-    var s2 = scannerList.First(s => s.Id == scannerId2);
-
-    foreach (var s1Pair in s1.DistancePairs)
-    {
-        var s2Pair = s2.DistancePairs.First(d => d.Distance == s1Pair.Distance);
-        Console.WriteLine($"");
-
-        // s1Pair.Id1 ==> scanner id / beacon id is the same as s2Pair
-        // todo: trying to build a list of the overlapping beacons between scanner 1 and scanner 2
-        // what data structure am I trying to use
-    }
+    var scanners = LocateScanners(input);
+    return (
+            from sA in scanners
+            from sB in scanners
+            where sA != sB
+            select Math.Abs(sA.Center.X - sB.Center.X) +
+                   Math.Abs(sA.Center.Y - sB.Center.Y) +
+                   Math.Abs(sA.Center.Z - sB.Center.Z)
+    ).Max();
 }
 
-void CalculateDistancePairs()
+HashSet<Scanner> LocateScanners(string input)
 {
-    foreach (var scanner in scannerList)
+    HashSet<Scanner> scanners = new(Parse(input));
+    HashSet<Scanner> locateScanners = new();
+    Queue<Scanner> q = new();
+
+    // when a scanner is located, it gets into the queue so we can check its neighbors
+
+    locateScanners.Add(scanners.First());
+    q.Enqueue(scanners.First());
+
+    while (q.Any())
     {
-        foreach (var b1 in scanner.Beacons)
+        var scannerA = q.Dequeue();
+        foreach (var scannerB in scanners.ToArray())
         {
-            foreach (var b2 in scanner.Beacons)
+            var maybeLocatedScanner = TryToLocate(scannerA, scannerB);
+            if (maybeLocatedScanner != null)
             {
-                if (b1.Id == b2.Id) continue;
-                
-                scanner.DistancePairs.Add(new BeaconPairDistance
-                {
-                    Id1 = b1.Id,
-                    Id2 = b2.Id,
-                    Distance = 
-                        FindDifference(b1.X, b2.X) +
-                        FindDifference(b1.Y, b2.Y) +
-                        FindDifference(b1.Z, b2.Z)
-                });
+                locateScanners.Add(maybeLocatedScanner);
+                q.Enqueue(maybeLocatedScanner);
+
+                scanners.Remove(scannerB);
+            }
+        }
+    }
+
+    return locateScanners;
+}
+
+Scanner TryToLocate(Scanner scannerA, Scanner scannerB)
+{
+    var beaconsInA = scannerA.GetBeaconsInWorld().ToArray();
+
+    foreach (var (beaconInA, beaconInB) in PotentialMatchingBeacons(scannerA, scannerB))
+    {
+        // now try to find the orientation for B
+        var rotatedB = scannerB;
+        for (int rotation = 0; rotation < 24; rotation++, rotatedB = rotatedB.Rotate())
+        {
+            // moving the rotated scanner so that beaconA and beaconB overlaps
+            // are there 12 matches
+            var beaconInRotatedB = rotatedB.Transform(beaconInB);
+
+            var locatedB = rotatedB.Translate(new Coord(
+                beaconInA.X - beaconInRotatedB.X,
+                beaconInA.Y - beaconInRotatedB.Y,
+                beaconInA.Z - beaconInRotatedB.Z
+            ));
+
+            if (locatedB.GetBeaconsInWorld().Intersect(beaconsInA).Count() >= 12)
+            {
+                return locatedB;
+            }
+        }
+    }
+
+    // no luck
+    return null;
+}
+
+IEnumerable<(Coord beaconInA, Coord beaconInB)> PotentialMatchingBeacons(Scanner scannerA, Scanner scannerB)
+{
+    // if we had a matching beaconInA and beaconInB and moved the center of the
+    // scanners to these then we would find at least 23 beacons with the same
+    // coordinates
+
+    // the only problem is that the rotation of scannerB is not fixed yet
+
+    // we need to make our check invariant to that:
+
+    // after the translation, we could form a set from each scanner
+    // taking the absolute values of the x, y, and z coordinates of their
+    // beacons and compare those
+
+    IEnumerable<int> absCoordinates(Scanner scanner) =>
+        from coord in scanner.GetBeaconsInWorld()
+        from v in new[] { coord.X, coord.Y, coord.Z }
+        select Math.Abs(v);
+
+    // this is the same no patter how we rotate scannerB, so the two sets should
+    // have at least 3 * 12 common values (with multiplicity)
+
+    // we can also considerably speed up the search with the pigenhold principle
+    // which says that it's enough to take all but 11 beacons from A and B
+    // if there is no match amongst those, there cannot be 12 matching pairs
+
+    IEnumerable<T> pick<T>(IEnumerable<T> ts) => ts.Take(ts.Count() - 11);
+
+    foreach (var beaconInA in pick(scannerA.GetBeaconsInWorld()))
+    {
+        var absA = absCoordinates(
+            scannerA.Translate(new Coord(-beaconInA.X, -beaconInA.Y, -beaconInA.Z))
+        ).ToHashSet();
+
+        foreach (var beaconInB in pick(scannerB.GetBeaconsInWorld()))
+        {
+            var absB = absCoordinates(
+                scannerB.Translate(new Coord(-beaconInB.X, -beaconInB.Y, -beaconInB.Z))
+            );
+
+            if (absB.Count(d => absA.Contains(d)) >= 3 * 12)
+            {
+                yield return (beaconInA, beaconInB);
             }
         }
     }
 }
 
-int FindDifference(int n1, int n2)
-{
-    return Math.Abs(n1 - n2);
-}
+Scanner[] Parse(string input) => (
+    from block in input.Split("\r\n\r\n")
+    let beacons =
+        from line in block.Split("\r\n").Skip(1)
+        let parts = line.Split(",").Select(int.Parse).ToArray()
+        select new Coord(parts[0], parts[1], parts[2])
+    select new Scanner(new Coord(0, 0, 0), 0, beacons.ToList())
+).ToArray();
 
-void LoadBeacons()
-{
-    Scanner scanner = null;
-    int beaconId = 0;
+record Coord(int X, int Y, int Z);
 
-    foreach (var line in File.ReadLines(fileName))
+record Scanner(Coord Center, int Rotation, List<Coord> BeaconsInLocal)
+{
+    public Scanner Rotate() => new Scanner(Center, Rotation + 1, BeaconsInLocal);
+
+    public Scanner Translate(Coord t) => new Scanner(
+        new Coord(Center.X + t.X, Center.Y + t.Y, Center.Z + t.Z), Rotation, BeaconsInLocal);
+
+    public Coord Transform(Coord coord)
     {
-        if (string.IsNullOrEmpty(line)) continue;
+        var (x, y, z) = coord;
 
-        if (line.Contains("scanner"))
+        // rotate the coordinate system so that the x-axis points in the 6 possible directions
+        switch (Rotation % 6)
         {
-            string id = line.Replace("--- scanner ", "");
-            id = id.Replace(" ---", "");
-            scanner = new Scanner(int.Parse(id));
-            scannerList.Add(scanner);
-            beaconId = 0;
-            continue;
+            case 0: (x, y, z) = (x, y, z); break;
+            case 1: (x, y, z) = (-x, y, -z); break;
+            case 2: (x, y, z) = (y, -x, z); break;
+            case 3: (x, y, z) = (-y, x, z); break;
+            case 4: (x, y, z) = (z, y, -x); break;
+            case 5: (x, y, z) = (-z, y, x); break;
         }
 
-        string[] coords = line.Split(new char[] { ',' });
-        scanner.Beacons.Add(new Beacon(beaconId++, int.Parse(coords[0]), int.Parse(coords[1]), int.Parse(coords[2])));
+        switch ((Rotation / 6) % 4)
+        {
+            case 0: (x, y, z) = (x, y, z); break;
+            case 1: (x, y, z) = (x, -z, y); break;
+            case 2: (x, y, z) = (x, -y, -z); break;
+            case 3: (x, y, z) = (x, z, -y); break;
+
+        }
+
+        return new Coord(Center.X + x, Center.Y + y, Center.Z + z);
     }
-}
 
-class Scanner
-{
-    public int Id { get; set; }
-    public List<Beacon> Beacons { get; set; } = new();
-    public List<BeaconPairDistance> DistancePairs { get; set; } = new();
-
-    public Scanner(int id)
+    public IEnumerable<Coord> GetBeaconsInWorld()
     {
-        Id = id;
-    }
-}
-
-class BeaconPairDistance
-{
-    public int Id1 { get; set; }
-    public int Id2 { get; set; }
-    public int Distance { get; set; }
-}
-
-class Beacon
-{
-    public int Id { get; set; }
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Z { get; set; }
-
-    public Beacon(int id, int x, int y, int z)
-    {
-        Id = id;
-        X = x;
-        Y = y;
-        Z = z;
+        return BeaconsInLocal.Select(Transform);
     }
 }
